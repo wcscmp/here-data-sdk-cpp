@@ -19,18 +19,37 @@
 
 
 mkdir -p build && cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
-	-DANDROID_PLATFORM=android-25 \
-	-DANDROID_ABI=arm64-v8a \
-	-DOLP_SDK_ENABLE_TESTING=NO \
-	-DOLP_SDK_BUILD_EXAMPLES=ON
+
+echo ""
+echo ""
+echo "*************** $VARIANT Build ********** Start ***************"
+CMAKE_COMMAND="$CMAKE_COMMAND -G Ninja -DCMAKE_TOOLCHAIN_FILE=$NDK_ROOT/build/cmake/android.toolchain.cmake -DANDROID_PLATFORM=android-21 -DANDROID_STL=c++_static -DANDROID_ABI=armeabi-v7a"
+NINJA_COMMAND="ninja -j$(nproc)"
+
+echo ""
+echo " ---- Calling $CMAKE_COMMAND"
+${CMAKE_COMMAND}
+
+# Run CMake. Warnings and errors are saved to build/CMakeFiles/CMakeOutput.log and
+# build/CMakeFiles/CMakeError.log.
+# -- We link Edge SDK as shared libraries in order to use shadowing for unit tests.
+# -- We build the examples.
+echo ""
+echo " ---- Calling ${NINJA_COMMAND}"
+${NINJA_COMMAND}
+
+#cmake .. -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
+#	-DANDROID_PLATFORM=android-25 \
+#	-DANDROID_ABI=arm64-v8a \
+#	-DOLP_SDK_ENABLE_TESTING=NO \
+#	-DOLP_SDK_BUILD_EXAMPLES=ON
 
 #cmake --build . # this is alternative option for build
-sudo make install -j$(nproc)
+#sudo make install -j$(nproc)
 cd -
 
-ls -la $ANDROID_HOME
-export PATH=$PATH:$ANDROID_HOME/tools/bin/
+#ls -la $ANDROID_HOME
+#export PATH=$PATH:$ANDROID_HOME/tools/bin/
 sdkmanager --list
 sdkmanager "platform-tools" "platforms;android-25" "emulator"
 sdkmanager "system-images;android-25;google_apis;arm64-v8a"
