@@ -23,7 +23,7 @@ mkdir -p build && cd build
 echo ""
 echo ""
 echo "*************** $VARIANT Build ********** Start ***************"
-CMAKE_COMMAND="$CMAKE_COMMAND -G Ninja -DCMAKE_TOOLCHAIN_FILE=$NDK_ROOT/build/cmake/android.toolchain.cmake -DANDROID_PLATFORM=android-21 -DANDROID_STL=c++_static -DANDROID_ABI=armeabi-v7a"
+CMAKE_COMMAND="cmake .. -G Ninja -DCMAKE_TOOLCHAIN_FILE=$NDK_ROOT/build/cmake/android.toolchain.cmake -DANDROID_PLATFORM=android-21 -DANDROID_STL=c++_static -DANDROID_ABI=armeabi-v7a"
 NINJA_COMMAND="ninja -j$(nproc)"
 
 echo ""
