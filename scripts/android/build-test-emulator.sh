@@ -51,9 +51,10 @@ cd -
 #ls -la $ANDROID_HOME
 #export PATH=$PATH:$ANDROID_HOME/tools/bin/
 sdkmanager --list
-sdkmanager "platform-tools" "platforms;android-25" "emulator"
-sdkmanager "system-images;android-25;google_apis;arm64-v8a"
-echo no | avdmanager create avd -n android-25 -k "system-images;android-25;google_apis;arm64-v8a"
-emulator -avd android-25 -no-snapshot -noaudio -no-boot-anim -gpu off -no-accel -no-window -camera-back none -camera-front none -selinux permissive -qemu -m 2048 &
+sdkmanager "platform-tools" "platforms;android-21" "emulator"
+sdkmanager "system-images;android-21;google_apis;armeabi-v7a"
+echo no | avdmanager create avd -n android-21 -k "system-images;android-21;google_apis;armeabi-v7a"
+ls $ANDROID_HOME/tools/emulator
+$ANDROID_HOME/tools/emulator -avd android-21 -no-snapshot -noaudio -no-boot-anim -gpu off -no-accel -no-window -camera-back none -camera-front none -selinux permissive -qemu -m 2048 &
 ./scripts/android/android-wait-for-emulator.sh
 adb shell input keyevent 82 &
