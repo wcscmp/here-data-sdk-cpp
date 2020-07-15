@@ -534,7 +534,7 @@ bool VersionedLayerClientImpl::IsCached(const std::string& partition_id) const {
 }
 
 bool VersionedLayerClientImpl::IsCached(const geo::TileKey& tile) const {
-  read::QuadTreeIndex cached_tree;
+  auto cached_tree = read::QuadTreeIndex();
   if (repository::PartitionsRepository::FindQuadTree(
           catalog_, settings_, layer_id_, catalog_version_.load(), tile,
           cached_tree)) {
