@@ -240,6 +240,8 @@ set(OLP_SDK_CLIENT_SOURCES
     ./src/client/OlpClientSettings.cpp
     ./src/client/OlpClientSettingsFactory.cpp
     ./src/client/PendingRequests.cpp
+    ./src/client/PendingUrlRequests.h
+    ./src/client/PendingUrlRequests.cpp
     ./src/client/Tokenizer.h
 )
 
@@ -355,7 +357,7 @@ add_library(${PROJECT_NAME} ${OLP_SDK_CORE_SOURCES} ${OLP_SDK_CORE_HEADERS})
 
 
 if (OLP_SDK_DISABLE_DEBUG_LOGGING)
-    target_compile_definitions(${PROJECT_NAME} 
+    target_compile_definitions(${PROJECT_NAME}
         PUBLIC LOGGING_DISABLE_DEBUG_LEVEL)
 endif()
 

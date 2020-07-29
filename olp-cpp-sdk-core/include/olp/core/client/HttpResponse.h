@@ -31,83 +31,139 @@ namespace olp {
 namespace client {
 
 /**
- * @brief An HTTP response.
+ * @brief This class represents the HTTP response created from the
+ * NetworkResponse and the request body.
  */
 class CORE_API HttpResponse {
  public:
   HttpResponse() = default;
+  virtual ~HttpResponse() = default;
+
   /**
    * @brief Creates the `HttpResponse` instance.
    *
    * @param status The HTTP status.
    * @param response The response body.
    */
-  HttpResponse(int status, std::string response = std::string())  // NOLINT
-      : status(status), response(std::move(response)) {}
+  HttpResponse(int status, std::string response = {})  // NOLINT
+      : status(status), response(response) {}
+
   /**
    * @brief Creates the `HttpResponse` instance.
    *
    * @param status The HTTP status.
    * @param response The response body.
+   *
    */
   HttpResponse(int status, std::stringstream&& response)
       : status(status), response(std::move(response)) {}
+
   /**
    * @brief Creates the `HttpResponse` instance.
    *
    * @param status The HTTP status.
    * @param response The response body.
    * @param headers Response headers.
+   *
    */
-  HttpResponse(int status, std::stringstream&& response,
-               http::Headers&& headers)
+  HttpResponse(int status, std::stringstream&& response, http::Headers headers)
       : status(status),
         response(std::move(response)),
         headers(std::move(headers)) {}
+
+  /**
+   * @brief Copy constructor.
+   *
+   * This copy constructor creates a deep copy of the response body if a
+   * non-shareable container type is used.
+   *
+   * @param other The instance of `HttpStatus` to copy from.
+   */
+  HttpResponse(const HttpResponse& other)
+      : status(other.status), headers(other.headers) {
+    response << other.response.rdbuf();
+    if (!response.good()) {
+      // Depending on the users handling of the stringstream it might be that
+      // the read position is already at the end and thus operator<< cannot
+      // read anything, so lets try with the safer but more memory intensive
+      // solution as a second step.
+      response.str(other.response.str());
+    }
+  }
+
+  /**
+   * @brief Copy assign operator.
+   *
+   * This copy assign operator creates a deep copy of the response body if a
+   * non-shareable container type is used.
+   *
+   * @param other The instance of `HttpStatus` to copy from.
+   */
+  HttpResponse& operator=(const HttpResponse& other) {
+    if (this != &other) {
+      status = other.status;
+      response << other.response.rdbuf();
+      headers = other.headers;
+    }
+
+    return *this;
+  }
+
+  // Default move constructor and move assignment.
+  HttpResponse(HttpResponse&&) = default;
+  HttpResponse& operator=(HttpResponse&&) = default;
+
   /**
    * @brief Copy `HttpResponse` content to a vector of unsigned chars.
    *
    * @param output Reference to a vector.
    */
-  void GetResponse(std::vector<unsigned char>& output);
+  void GetResponse(std::vector<unsigned char>& output) {
+    response.seekg(0, std::ios::end);
+    output.resize(response.tellg());
+    response.seekg(0, std::ios::beg);
+    response.read(reinterpret_cast<char*>(output.data()), output.size());
+    response.seekg(0, std::ios::beg);
+  }
 
   /**
    * @brief Copy `HttpResponse` content to a string.
    *
    * @param output Reference to a string.
    */
-  void GetResponse(std::string& output);
+  void GetResponse(std::string& output) { output = response.str(); }
 
   /**
-   * @brief The HTTP status.
+   * @brief Return the const reference to the response headers.
    *
-   * @see `ErrorCode` for information on negative status
-   * numbers.
-   * @see `HttpStatusCode` for information on positive status
-   * numbers.
+   * @return The const reference to the headers vector.
    */
-  int status{static_cast<int>(olp::http::ErrorCode::UNKNOWN_ERROR)};
-  /**
-   * @brief The HTTP response.
-   */
+  const http::Headers& GetHeaders() const { return headers; }
 
-  std::stringstream response;
   /**
-   * @brief HTTP headers.
+   * @brief Return the response status.
+   *
+   * The response status can either be a
+   *
+   * @return The response status.
    */
+  int GetStatus() const { return status; }
+
+  /// The HTTP Status.
+  /// This can be either a `ErrorCode` if negative or a `HttpStatusCode` if
+  /// positive.
+  /// @deprecated: This field will be marked as private by 01.2021.
+  /// Please do not use directly, use `GetStatus()` method instead.
+  int status{static_cast<int>(olp::http::ErrorCode::UNKNOWN_ERROR)};
+  /// The HTTP response.
+  /// @deprecated: This field will be marked as private by 01.2021.
+  /// Please do not use directly, use `GetResponse()` methods instead.
+  std::stringstream response;
+  /// HTTP headers.
+  /// @deprecated: This field will be marked as private by 01.2021.
+  /// Please do not use directly, use `GetHeaders()` method instead.
   http::Headers headers;
 };
-
-inline void HttpResponse::GetResponse(std::vector<unsigned char>& output) {
-  response.seekg(0, std::ios::end);
-  output.resize(response.tellg());
-  response.seekg(0, std::ios::beg);
-  response.read(reinterpret_cast<char*>(output.data()), output.size());
-}
-
-inline void HttpResponse::GetResponse(std::string& output) {
-  output = response.str();
-}
 
 }  // namespace client
 }  // namespace olp
