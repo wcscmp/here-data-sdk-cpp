@@ -294,35 +294,38 @@ client::CancellationToken VersionedLayerClientImpl::PrefetchTiles(
 
               AddTask(
                   settings.task_scheduler, pending_requests,
-                  [=](CancellationContext inner_context) {
+                  [=](CancellationContext inner_context) -> EmptyResponse {
                     if (handle.empty()) {
-                      return DataResponse{
-                          {olp::client::ErrorCode::NotFound, "Not found"}};
+                      prefetch_job->CompleteTask(
+                          tile, {client::ErrorCode::NotFound, "Not found"});
+                      return PrefetchTileNoError{};
                     }
                     repository::DataCacheRepository data_cache_repository(
                         catalog, shared_settings->cache);
                     if (data_cache_repository.IsCached(layer_id, handle)) {
-                      // Cached, return an empty success
-                      return DataResponse(nullptr);
-                    } else {
-                      // Fetch from online
-                      repository::DataRepository repository(
-                          catalog, *shared_settings, lookup_client);
-                      return repository.GetVersionedData(
-                          layer_id,
-                          DataRequest().WithDataHandle(handle).WithBillingTag(
-                              biling_tag),
-                          version, inner_context);
-                    }
-                  },
-                  [=](DataResponse result) {
-                    if (result.IsSuccessful()) {
                       prefetch_job->CompleteTask(tile);
-                    } else {
-                      prefetch_job->CompleteTask(tile, result.GetError());
+                      return PrefetchTileNoError{};
                     }
+
+                    // Fetch from online
+                    repository::DataRepository repository(
+                        catalog, *shared_settings, lookup_client);
+                    auto result = repository.GetVersionedData(
+                        layer_id,
+                        DataRequest().WithDataHandle(handle).WithBillingTag(
+                            biling_tag),
+                        version, inner_context);
+
+                    if (result.IsSuccessful()) {
+                      prefetch_job->CompleteTask(tile,
+                                                 result.GetNetworkStatistics());
+                    } else {
+                      prefetch_job->CompleteTask(tile, result.GetError(),
+                                                 result.GetNetworkStatistics());
+                    }
+                    return PrefetchTileNoError{};
                   },
-                  prefetch_job->AddTask());
+                  [=](EmptyResponse) {}, prefetch_job->AddTask());
             });
 
         context.ExecuteOrCancelled([&]() {
@@ -356,11 +359,12 @@ client::CancellableFuture<PrefetchTilesResponse>
 VersionedLayerClientImpl::PrefetchTiles(
     PrefetchTilesRequest request, PrefetchStatusCallback status_callback) {
   auto promise = std::make_shared<std::promise<PrefetchTilesResponse>>();
-  auto cancel_token = PrefetchTiles(std::move(request),
-                                    [promise](PrefetchTilesResponse response) {
-                                      promise->set_value(std::move(response));
-                                    },
-                                    std::move(status_callback));
+  auto cancel_token = PrefetchTiles(
+      std::move(request),
+      [promise](PrefetchTilesResponse response) {
+        promise->set_value(std::move(response));
+      },
+      std::move(status_callback));
   return client::CancellableFuture<PrefetchTilesResponse>(cancel_token,
                                                           promise);
 }

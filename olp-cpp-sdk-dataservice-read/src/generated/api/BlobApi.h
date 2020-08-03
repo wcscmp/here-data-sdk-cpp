@@ -24,6 +24,7 @@
 #include <olp/core/client/ApiError.h>
 #include <olp/core/client/ApiResponse.h>
 #include <boost/optional.hpp>
+#include "../../ApiResponseWithNetworkStats.h"
 #include "olp/dataservice/read/model/Data.h"
 
 namespace olp {
@@ -39,7 +40,8 @@ namespace read {
  */
 class BlobApi {
  public:
-  using DataResponse = client::ApiResponse<model::Data, client::ApiError>;
+  using DataResponseWithNetworkStats =
+      ApiResponseWithNetworkStats<model::Data, client::ApiError>;
 
   /**
    * @brief Retrieves a data blob for specified handle.
@@ -56,16 +58,16 @@ class BlobApi {
    * only supports a single byte range. The range parameter can also be
    * specified as a query parameter, i.e. range=bytes=10-. For volatile layers
    * use the pagination links returned in the response body.
-   * @param context A CancellationContext, which can be used to cancel the pending request.
+   * @param context A CancellationContext, which can be used to cancel the
+   * pending request.
    *
    * @return Data response.
    */
-  static DataResponse GetBlob(const client::OlpClient& client,
-                              const std::string& layer_id,
-                              const std::string& data_handle,
-                              boost::optional<std::string> billing_tag,
-                              boost::optional<std::string> range,
-                              const client::CancellationContext& context);
+  static DataResponseWithNetworkStats GetBlob(
+      const client::OlpClient& client, const std::string& layer_id,
+      const std::string& data_handle, boost::optional<std::string> billing_tag,
+      boost::optional<std::string> range,
+      const client::CancellationContext& context);
 };
 
 }  // namespace read

@@ -1897,11 +1897,20 @@ TEST_F(DataserviceReadVersionedLayerClientTest, PrefetchTilesWithStatus) {
       .WillOnce(ReturnHttpResponse(GetResponse(http::HttpStatusCode::OK),
                                    HTTP_RESPONSE_QUADKEYS_92259));
 
+  EXPECT_CALL(*network_mock_,
+              Send(IsGetRequest(URL_BLOB_DATA_PREFETCH_6), _, _, _, _))
+      .WillOnce(ReturnHttpResponse(GetResponse(http::HttpStatusCode::OK)
+                                       .WithBytesDownloaded(100)
+                                       .WithBytesUploaded(50),
+                                   HTTP_RESPONSE_BLOB_DATA_PREFETCH_6));
+
   struct Status {
     MOCK_METHOD(void, Op, (read::PrefetchStatus));
   };
 
   Status status_object;
+
+  client::NetworkStatistics accumulated_stats;
 
   {
     using testing::InSequence;
@@ -1929,7 +1938,10 @@ TEST_F(DataserviceReadVersionedLayerClientTest, PrefetchTilesWithStatus) {
       [promise](PrefetchTilesResponse response) {
         promise->set_value(std::move(response));
       },
-      [&](read::PrefetchStatus status) { status_object.Op(status); });
+      [&](read::PrefetchStatus status) {
+        status_object.Op(status);
+        accumulated_stats = status.accumulated_network_statistics;
+      });
 
   ASSERT_NE(future.wait_for(kWaitTimeout), std::future_status::timeout);
   PrefetchTilesResponse response = future.get();
@@ -1942,6 +1954,9 @@ TEST_F(DataserviceReadVersionedLayerClientTest, PrefetchTilesWithStatus) {
     ASSERT_TRUE(tile_result->IsSuccessful());
     ASSERT_TRUE(tile_result->tile_key_.IsValid());
   }
+
+  EXPECT_GE(accumulated_stats.bytes_downloaded, 100);
+  EXPECT_GE(accumulated_stats.bytes_uploaded, 50);
 
   testing::Mock::VerifyAndClearExpectations(&status_object);
 }

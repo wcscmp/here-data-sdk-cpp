@@ -30,6 +30,19 @@
 namespace olp {
 namespace client {
 
+/*
+ * @brief Network statistics
+ */
+struct NetworkStatistics {
+  uint64_t bytes_uploaded{0};
+  uint64_t bytes_downloaded{0};
+
+  void Accumulate(const NetworkStatistics& other) {
+    bytes_uploaded += other.bytes_uploaded;
+    bytes_downloaded += other.bytes_downloaded;
+  }
+};
+
 /**
  * @brief An HTTP response.
  */
@@ -44,6 +57,7 @@ class CORE_API HttpResponse {
    */
   HttpResponse(int status, std::string response = std::string())  // NOLINT
       : status(status), response(std::move(response)) {}
+
   /**
    * @brief Creates the `HttpResponse` instance.
    *
@@ -52,6 +66,7 @@ class CORE_API HttpResponse {
    */
   HttpResponse(int status, std::stringstream&& response)
       : status(status), response(std::move(response)) {}
+
   /**
    * @brief Creates the `HttpResponse` instance.
    *
@@ -64,6 +79,7 @@ class CORE_API HttpResponse {
       : status(status),
         response(std::move(response)),
         headers(std::move(headers)) {}
+
   /**
    * @brief Copy `HttpResponse` content to a vector of unsigned chars.
    *
@@ -79,6 +95,22 @@ class CORE_API HttpResponse {
   void GetResponse(std::string& output);
 
   /**
+   * @brief Set `NetworkStatistics`.
+   *
+   * @param network_statistics Instance of `NetworkStatistics`.
+   */
+  void SetNetworkStatistics(NetworkStatistics network_statistics) {
+    network_statistics_ = network_statistics;
+  }
+
+  /**
+   * @brief Get the `NetworkStatistics`.
+   *
+   * @return Instance of `NetworkStatistics` previously set.
+   */
+  NetworkStatistics GetNetworkStatistics() const { return network_statistics_; }
+
+  /**
    * @brief The HTTP status.
    *
    * @see `ErrorCode` for information on negative status
@@ -90,12 +122,15 @@ class CORE_API HttpResponse {
   /**
    * @brief The HTTP response.
    */
-
   std::stringstream response;
+
   /**
    * @brief HTTP headers.
    */
   http::Headers headers;
+
+ private:
+  NetworkStatistics network_statistics_;
 };
 
 inline void HttpResponse::GetResponse(std::vector<unsigned char>& output) {

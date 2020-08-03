@@ -21,6 +21,8 @@
 
 #include <cstddef>
 
+#include <olp/core/client/HttpResponse.h>
+
 namespace olp {
 namespace dataservice {
 namespace read {
@@ -33,6 +35,8 @@ struct PrefetchStatus {
   size_t prefetched_tiles;
   /// Total number of tiles to prefetch during prefetch operation.
   size_t total_tiles_to_prefetch;
+  /// Accumulated network statistics.
+  client::NetworkStatistics accumulated_network_statistics;
 };
 
 }  // namespace read
