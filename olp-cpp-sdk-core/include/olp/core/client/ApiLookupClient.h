@@ -78,6 +78,9 @@ class CORE_API ApiLookupClient final {
    * which data should be fetched.
    * @param callback The function callback used to receive the
    * `LookupApiResponse` instance.
+   * @note If the catalog endpoint provider is specified and has the catalog
+   * URL, the method is synchronized, and the callback is called in the same
+   * thread.
    *
    * @return The method used to call or to cancel the request.
    */
